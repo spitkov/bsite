@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
@@ -29,7 +30,7 @@ interface LanyardResponse {
   };
 }
 
-function CustomCursor() {
+function CustomCursor(): React.ReactElement | null {
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -54,7 +55,7 @@ function CustomCursor() {
   return <div className="cursor-dot" style={{ left: position.x, top: position.y }} />;
 }
 
-function GridBackground() {
+function GridBackground(): React.ReactElement {
   useEffect(() => {
     let dots: HTMLElement[] = [];
     const SPACING = window.innerWidth <= 768 ? 30 : 40;
@@ -100,7 +101,7 @@ function GridBackground() {
   return <div className="fixed inset-0 bg-zinc-900" />;
 }
 
-function Profile() {
+function Profile(): React.ReactElement {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const socials = [
     { name: 'Instagram', username: 'brokensamsaj5', url: 'https://instagram.com/brokensamsaj5' },
@@ -121,11 +122,12 @@ function Profile() {
     ? `https://cdn.discordapp.com/avatars/${profileData.discord_user.id}/${profileData.discord_user.avatar}.png`
     : 'https://cdn.discordapp.com/embed/avatars/0.png';
 
-  const statusColor = profileData ? {
+  const statusColor = profileData ? ({
     online: '#43b581',
     idle: '#faa61a',
     dnd: '#f04747',
-  }[profileData.discord_status] || '#747f8d' : '#747f8d';
+    offline: '#747f8d'
+  })[profileData.discord_status] : '#747f8d';
 
   return (
     <div className="text-white text-center max-w-lg mx-auto">
@@ -163,9 +165,14 @@ function Profile() {
   );
 }
 
-function DiscordActivity() {
+interface DiscordItem {
+  id: string;
+  html: string;
+}
+
+function DiscordActivity(): React.ReactElement {
   useEffect(() => {
-    let previousData = null;
+    let previousData: LanyardResponse | null = null;
 
     function getDisocrdStatus() {
       const apiUrl = "https://api.lanyard.rest/v1/users/1040674597235863623";
@@ -191,24 +198,24 @@ function DiscordActivity() {
     }
 
     function updateDiscordStatus(data: LanyardResponse) {
-      if (!data || !data.success) return;
+      if (!data?.success) return;
 
       const ulElement = document.querySelector(`ul.contacts-list`);
-      if (!ulElement) return;
+      if (!(ulElement instanceof HTMLUListElement)) return;
 
       const existingDiscordItems = ulElement.querySelectorAll('.discord-item');
-      const newItems = generateDiscordItems(data);
+      const newItems: DiscordItem[] = generateDiscordItems(data);
 
       existingDiscordItems.forEach(item => {
-        if (!newItems.find(newItem => newItem.id === (item as HTMLElement).id)) {
-          fadeOutAndRemove(item as HTMLElement);
+        if (item instanceof HTMLElement && !newItems.find(newItem => newItem.id === item.id)) {
+          fadeOutAndRemove(item);
         }
       });
 
       newItems.forEach((newItem, index) => {
         const existingItem = ulElement.querySelector(`#${newItem.id}`);
-        if (existingItem) {
-          updateExistingItem(existingItem as HTMLElement, newItem.html);
+        if (existingItem instanceof HTMLElement) {
+          updateExistingItem(existingItem, newItem.html);
         } else {
           addNewItem(ulElement, newItem.html, index);
         }
@@ -255,7 +262,7 @@ function updateExistingItem(existingItem: HTMLElement, newHtml: string) {
   }
 }
 
-function addNewItem(ulElement: HTMLElement, html: string, index: number) {
+function addNewItem(ulElement: HTMLUListElement, html: string, index: number) {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
   const newItem = tempDiv.firstElementChild as HTMLElement;
@@ -284,7 +291,7 @@ function addNewItem(ulElement: HTMLElement, html: string, index: number) {
 
 function rearrangeItems() {
   const ulElement = document.querySelector(`ul.contacts-list`);
-  if (!ulElement) return;
+  if (!(ulElement instanceof HTMLUListElement)) return;
 
   const discordItems = ulElement.querySelectorAll('.discord-item');
   discordItems.forEach((item, index) => {
@@ -299,13 +306,13 @@ function rearrangeItems() {
   }, 50);
 }
 
-function generateDiscordItems(data: LanyardResponse) {
-  const items = [];
+function generateDiscordItems(data: LanyardResponse): DiscordItem[] {
+  const items: DiscordItem[] = [];
   const { activities } = data.data;
 
   if (activities) {
     activities.forEach((activity: DiscordActivity) => {
-      if (activity.name === "Spotify") {
+      if (activity.name === "Spotify" && activity.assets?.large_image) {
         const { details: song, state: artist, assets, sync_id } = activity;
         const album_art_url = assets.large_image.startsWith('spotify:')
           ? `https://i.scdn.co/image/${assets.large_image.slice(8)}`
@@ -320,8 +327,8 @@ function generateDiscordItems(data: LanyardResponse) {
               </div>
               <div class="contact-info">
                 <p class="contact-title">Spotify</p>
-                <p class="contact-link" style="max-width:150px; cursor: pointer;" onclick="window.open('https://open.spotify.com/track/${sync_id}', '_blank')">${song}</p>
-                <p class="contact-title" style="cursor: pointer;" onclick="window.open('https://open.spotify.com/search/${encodeURIComponent(artist)}', '_blank')">${artist}</p>
+                <p class="contact-link" style="max-width:150px; cursor: pointer;" onclick="window.open('https://open.spotify.com/track/${sync_id ?? ''}', '_blank')">${song ?? ''}</p>
+                <p class="contact-title" style="cursor: pointer;" onclick="window.open('https://open.spotify.com/search/${artist ? encodeURIComponent(artist) : ''}', '_blank')">${artist ?? ''}</p>
               </div>
             </li>`
         });
@@ -332,7 +339,7 @@ function generateDiscordItems(data: LanyardResponse) {
   return items;
 }
 
-export default function Home() {
+export default function Home(): React.ReactElement {
   return (
     <main className="min-h-screen relative bg-zinc-900 flex items-center justify-center cursor-none">
       <CustomCursor />
