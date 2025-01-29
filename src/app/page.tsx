@@ -1,6 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+
+// Add these interfaces at the top of the file
+interface ProfileData {
+  discord_user: {
+    id: string;
+    avatar: string;
+  };
+  discord_status: 'online' | 'idle' | 'dnd' | 'offline';
+}
+
+interface DiscordActivity {
+  name: string;
+  details?: string;
+  state?: string;
+  assets?: {
+    large_image: string;
+  };
+  sync_id?: string;
+}
+
+interface LanyardResponse {
+  success: boolean;
+  data: {
+    activities: DiscordActivity[];
+  };
+}
 
 function CustomCursor() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -74,7 +101,7 @@ function GridBackground() {
 }
 
 function Profile() {
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const socials = [
     { name: 'Instagram', username: 'brokensamsaj5', url: 'https://instagram.com/brokensamsaj5' },
     { name: 'TikTok', username: 'brokensamsaj5', url: 'https://tiktok.com/@brokensamsaj5' },
@@ -103,10 +130,12 @@ function Profile() {
   return (
     <div className="text-white text-center max-w-lg mx-auto">
       <div className="relative w-32 h-32 mx-auto mb-8">
-        <img
+        <Image
           src={avatarUrl}
           alt="Profile"
-          className="w-full h-full rounded-full object-cover border-2 border-white/10"
+          width={128}
+          height={128}
+          className="rounded-full object-cover border-2 border-white/10"
         />
         <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full border-4 border-zinc-900"
              style={{ backgroundColor: statusColor }} />
@@ -161,7 +190,7 @@ function DiscordActivity() {
       }
     }
 
-    function updateDiscordStatus(data: any) {
+    function updateDiscordStatus(data: LanyardResponse) {
       if (!data || !data.success) return;
 
       const ulElement = document.querySelector(`ul.contacts-list`);
@@ -270,12 +299,12 @@ function rearrangeItems() {
   }, 50);
 }
 
-function generateDiscordItems(data: any) {
+function generateDiscordItems(data: LanyardResponse) {
   const items = [];
   const { activities } = data.data;
 
   if (activities) {
-    activities.forEach((activity: any) => {
+    activities.forEach((activity: DiscordActivity) => {
       if (activity.name === "Spotify") {
         const { details: song, state: artist, assets, sync_id } = activity;
         const album_art_url = assets.large_image.startsWith('spotify:')
