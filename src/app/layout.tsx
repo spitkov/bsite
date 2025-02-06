@@ -16,7 +16,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <header>
+          <nav>
+            <a rel="me" href="https://mastodon.v0dev.cfd/@matt">Mastodon</a>
+          </nav>
+        </header>
+        {children}
+      </body>
     </html>
   )
 }
